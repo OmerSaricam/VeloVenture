@@ -1,3 +1,7 @@
+/* 
+  Rotary Encoder Sensor reading code for ESP-32 (arduino compatible)
+*/
+
 // Rotary Encoder Inputs
 #define CLK 21
 #define DT 19
