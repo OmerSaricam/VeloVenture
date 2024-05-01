@@ -1,5 +1,5 @@
 /* 
-  Hall effect reading code for ESP-32 (arduino compatible)
+  Rotary Encoder Sensor and Hall effect combined reading code for ESP-32 (arduino compatible)
 */
 
 int led = 13; // LED on Arduino
@@ -11,19 +11,45 @@ float distancePerMagnet = wheelCircumference / 3; // Distance per magnet pass
 const long interval = 1000; // Interval to check speed in milliseconds
 int magnetCount = 0; // Count of magnet passes
 
+// Rotary Encoder Inputs
+#define CLK 21
+#define DT 19
+#define SW 18
+
+int counter = 0;
+int currentStateCLK;
+int lastStateCLK;
+String currentDir ="";
+unsigned long lastButtonPress = 0;
+
 void setup() {
+
   pinMode(led, OUTPUT);
+
+  // Set hall effect pin
   pinMode(digitalPin, INPUT);
+
+  // Set encoder pins
+  pinMode(CLK,INPUT);
+  pinMode(DT,INPUT);
+  pinMode(SW, INPUT_PULLUP);
+
   Serial.begin(9600);
-  lastCheck = millis(); // Initialize last check time
+
+  lastStateCLK = digitalRead(CLK);
 }
 
 void loop() {
-  int digitalVal = digitalRead(digitalPin); // Read the current state of the magnetic sensor
+  handleMagneticSensor();
+  handleRotaryEncoder();
+  delay(1);
+}
 
-  // Check for rising edge
+void handleMagneticSensor() {
+  int digitalVal = digitalRead(digitalPin);
+
   if (digitalVal == HIGH && lastDigitalVal == LOW) {
-    magnetCount++; // Increment magnet pass count
+    magnetCount++;
     digitalWrite(led, HIGH); // Turn on LED
   } else {
     digitalWrite(led, LOW); // Turn off LED
@@ -31,7 +57,7 @@ void loop() {
 
   lastDigitalVal = digitalVal; // Update the last digital value
 
-  // Check if it is time to calculate speed
+    // Check if it is time to calculate speed
   unsigned long currentTime = millis();
   if (currentTime - lastCheck >= interval) {
     float distance = magnetCount * distancePerMagnet; // Total distance covered
@@ -39,21 +65,67 @@ void loop() {
     float speedMS = distance / timeSeconds; // Speed in meters per second
     float speedKMH = speedMS * 3.6; // Speed in kilometers per hour
 
-    // Print the speed
-    Serial.print("Speed: ");
-    Serial.print(speedMS);
-    Serial.print(" m/s, ");
-    Serial.print(speedKMH);
-    Serial.println(" km/h");
+    printSpeed(speedMS, speedKMH);
 
     // Reset for next interval
     magnetCount = 0;
     lastCheck = currentTime;
   }
 
-  delay(1); // Short delay to stabilize readings
 }
 
+void handleRotaryEncoder() {
+  // Read the current state of CLK
+	currentStateCLK = digitalRead(CLK);
+
+	// If last and current state of CLK are different, then pulse occurred
+	// React to only 1 state change to avoid double count
+	if (currentStateCLK != lastStateCLK  && currentStateCLK == 1){
+
+		// If the DT state is different than the CLK state then
+		// the encoder is rotating CCW so decrement
+		if (digitalRead(DT) != currentStateCLK) {
+			counter --;
+			currentDir ="CCW";
+		} else {
+			// Encoder is rotating CW so increment
+			counter ++;
+			currentDir ="CW";
+		}
+
+		Serial.print("Direction: ");
+		Serial.print(currentDir);
+		Serial.print(" | Counter: ");
+		Serial.println(counter);
+  }
+
+  // Remember last CLK state
+  lastStateCLK = currentStateCLK;
+
+  // Read the button state
+  int btnState = digitalRead(SW);
+
+  //If we detect LOW signal, button is pressed
+	if (btnState == LOW) {
+		//if 50ms have passed since last LOW pulse, it means that the
+		//button has been pressed, released and pressed again
+		if (millis() - lastButtonPress > 50) {
+			Serial.println("Button pressed!");
+		}
+		// Remember last button press event
+		lastButtonPress = millis();
+	}
+}
+
+void printSpeed(float speedMS, float speedKMH) {
+  Serial.print("Speed: ");
+  Serial.print(speedMS);
+  Serial.print(" m/s, ");
+  Serial.print(speedKMH);
+  Serial.println(" km/h");
+}
+
+// HALL EFFECT - COMMENT LINES
 
 // int led = 13; // LED on Arduino
 // int digitalPin = 4; // Linear Hall magnetic sensor digital interface

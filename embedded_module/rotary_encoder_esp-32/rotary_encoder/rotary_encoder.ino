@@ -72,5 +72,5 @@ void loop() {
 	}
 
 	// Put in a slight delay to help debounce the reading
-	delay(10);
+	delay(50);
 }
