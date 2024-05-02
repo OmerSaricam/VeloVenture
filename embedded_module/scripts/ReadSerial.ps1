@@ -1,5 +1,5 @@
 # COM portunuza bağlanın
-$port = new-Object System.IO.Ports.SerialPort COM4, 19200, None, 8, one
+$port = new-Object System.IO.Ports.SerialPort COM3, 9600, None, 8, one
 
 # Portu açın
 $port.Open()
@@ -15,8 +15,8 @@ try {
         }
     }
 } catch {
-    echo "Bir hata oluştu: $_"
+    echo "An error occured: $_"
 } finally {
     $port.Close()  # Hata oluşsa da oluşmasa da portu kapat
-    echo "Port kapandı."
+    echo "Port is closed."
 }

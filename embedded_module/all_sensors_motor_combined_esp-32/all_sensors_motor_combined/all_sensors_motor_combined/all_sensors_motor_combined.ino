@@ -5,7 +5,7 @@
 #include <ESP32Servo.h>
 
 Servo myservo;  // create servo object to control a servo
-int servoPin = 2;  // GPIO pin for servo control
+int servoPin = 23;  // GPIO pin for servo control
 unsigned long lastInputTime = 0;  // Debounce timer
 
 int led = 13; // LED on Arduino
